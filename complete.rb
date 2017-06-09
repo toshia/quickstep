@@ -17,9 +17,14 @@ module Plugin::Quickstep
     end
 
     def input_change_event(widget)
-      model = self.model = gen_store
-      uri = Retriever::URI!(widget.text) if URI.regexp =~ widget.text
-      model.add_model(uri) if uri
+      tree_model = self.model = gen_store
+      Enumerator.new{ |y|
+        Plugin.filtering(:quickstep_query, widget.text.freeze, y)
+      }.deach{ |detected|
+        tree_model.add_model(detected)
+      }.trap{ |err|
+        error err
+      }
       false
     end
 

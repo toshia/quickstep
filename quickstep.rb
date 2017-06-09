@@ -15,6 +15,14 @@ Plugin.create(:quickstep) do
     dialog.show_all
   end
 
+  # URLっぽい文字列なら、それに対してintentを発行する候補を出す
+  filter_quickstep_query do |query, yielder|
+    if URI.regexp =~ query
+      yielder << Retriever::URI!(query)
+    end
+    [query, yielder]
+  end
+
   def put_widget(box)
     search = Gtk::Entry.new
     complete = Plugin::Quickstep::Complete.new(search)
