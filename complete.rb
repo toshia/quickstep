@@ -50,16 +50,43 @@ module Plugin::Quickstep
     def add_model(model)
       case model
       when Retriever::Model
-        iter = append
-        iter[COL_ICON] = nil # model.icon if model.respond_to?(icon)
-        iter[COL_TITLE] = model.title
-        iter[COL_MODEL] = model
+        force_add_model(model)
       when Retriever::URI, URI::Generic, Addressable::URI, String
-        iter = append
-        iter[COL_ICON] = nil
-        iter[COL_TITLE] = 'URLを開く: %{uri}' % {uri: model.to_s}
-        iter[COL_MODEL] = model
+        add_uri_or_models(model)
       end
+    end
+
+    private
+
+    def force_add_model(model)
+      iter = append
+      iter[COL_ICON] = nil # model.icon if model.respond_to?(icon)
+      iter[COL_TITLE] = model.title
+      iter[COL_MODEL] = model
+    end
+
+    def add_uri_or_models(uri)
+      model_slugs = Plugin.filtering(:model_of_uri, uri.freeze, Set.new).last
+      if model_slugs.empty?
+        force_add_uri(uri)
+      else
+        model_slugs.each do |model_slug|
+          Deferred.new{
+            Retriever.Model(model_slug).find_by_uri(uri)
+          }.next{|model|
+            force_add_model(model) if model
+          }.trap do |err|
+            error err
+          end
+        end
+      end
+    end
+
+    def force_add_uri(uri)
+      iter = append
+      iter[COL_ICON] = nil
+      iter[COL_TITLE] = 'URLを開く: %{uri}' % {uri: uri.to_s}
+      iter[COL_MODEL] = uri
     end
   end
 end
