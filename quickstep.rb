@@ -26,8 +26,17 @@ Plugin.create(:quickstep) do
   def put_widget(box)
     search = Gtk::Entry.new
     complete = Plugin::Quickstep::Complete.new(search)
+    search.ssc(:activate, &gen_query_box_activated)
     box.closeup(search).add(complete)
     complete
+  end
+
+  def gen_query_box_activated
+    ->(search) do
+      dialog = search.get_ancestor(Gtk::Dialog)
+      dialog.signal_emit(:response, Gtk::Dialog::RESPONSE_ACCEPT) if dialog
+      false
+    end
   end
 
   def register_listeners(dialog, treeview)
