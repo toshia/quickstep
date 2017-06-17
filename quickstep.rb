@@ -35,7 +35,6 @@ Plugin.create(:quickstep) do
       case response
       when Gtk::Dialog::RESPONSE_ACCEPT
         selected = treeview.selection.selected
-        p selected[Plugin::Quickstep::Store::COL_MODEL] if selected
         Plugin.call(:open, selected[Plugin::Quickstep::Store::COL_MODEL]) if selected
       end
       widget.destroy
